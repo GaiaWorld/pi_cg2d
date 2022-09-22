@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 pub fn compare_segments<F>(le1: &Rc<SweepEvent<F>>, le2: &Rc<SweepEvent<F>>) -> Ordering
 where
-    F: Scalar + RealField,
+    F: Scalar + RealField + Copy,
 {
     if Rc::ptr_eq(&le1, &le2) {
         return Ordering::Equal;

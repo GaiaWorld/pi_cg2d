@@ -3,7 +3,7 @@ use nalgebra::{Point2, RealField, Scalar};
 #[derive(Debug, Clone, PartialEq)]
 pub enum LineIntersection<F>
 where
-    F: Scalar + RealField,
+    F: Scalar + RealField + Copy,
 {
     None,
     Point(Point2<F>),
@@ -17,7 +17,7 @@ pub fn intersection<F>(
     b2: Point2<F>,
 ) -> LineIntersection<F>
 where
-    F: Scalar + RealField,
+    F: Scalar + RealField + Copy,
 {
     let va = Point2::new(a2.x - a1.x, a2.y - a1.y);
     let vb = Point2::new(b2.x - b1.x, b2.y - b1.y);
@@ -77,7 +77,7 @@ where
 
 fn mid_point<F>(p: Point2<F>, s: F, d: Point2<F>) -> Point2<F>
 where
-    F: Scalar + RealField,
+    F: Scalar + RealField + Copy,
 {
     Point2::new(p.x + s * d.x, p.y + s * d.y)
 }
@@ -85,7 +85,7 @@ where
 #[inline]
 fn cross_product<F>(a: Point2<F>, b: Point2<F>) -> F
 where
-    F: Scalar + RealField,
+    F: Scalar + RealField + Copy,
 {
     a.x * b.y - a.y * b.x
 }
@@ -93,7 +93,7 @@ where
 #[inline]
 fn dot_product<F>(a: Point2<F>, b: Point2<F>) -> F
 where
-    F: Scalar + RealField,
+    F: Scalar + RealField + Copy,
 {
     a.x * b.x + a.y * b.y
 }

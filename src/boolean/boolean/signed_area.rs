@@ -3,7 +3,7 @@ use nalgebra::{Point2, RealField, Scalar};
 #[inline]
 pub fn signed_area<F>(p0: Point2<F>, p1: Point2<F>, p2: Point2<F>) -> F
 where
-    F: Scalar + RealField,
+    F: Scalar + RealField + Copy,
 {
     (p0.x - p2.x) * (p1.y - p2.y) - (p1.x - p2.x) * (p0.y - p2.y)
 }

@@ -5,7 +5,7 @@ use pi_heap::simple_heap::SimpleHeap;
 use nalgebra::{RealField, Scalar};
 use std::rc::Rc;
 
-pub fn possible_intersection<F: RealField + Scalar>(
+pub fn possible_intersection<F: Scalar + RealField + Copy>(
     se1: &Rc<SweepEvent<F>>,
     se2: &Rc<SweepEvent<F>>,
     queue: &mut SimpleHeap<Rc<SweepEvent<F>>>,

@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 pub fn compute_fields<F>(event: &Rc<SweepEvent<F>>, maybe_prev: Option<&Rc<SweepEvent<F>>>, operation: Operation)
 where
-    F: Scalar + RealField,
+    F: Scalar + RealField + Copy,
 {
     if let Some(prev) = maybe_prev {
         if event.is_subject == prev.is_subject {
@@ -24,7 +24,7 @@ where
 
 fn in_result<F>(event: &SweepEvent<F>, operation: Operation) -> bool
 where
-    F: Scalar + RealField,
+    F: Scalar + RealField + Copy,
 {
     match event.get_edge_type() {
         EdgeType::Normal => match operation {

@@ -9,7 +9,7 @@ use pi_heap::simple_heap::SimpleHeap;
 use nalgebra::RealField;
 use std::rc::Rc;
 
-pub fn subdivide<F: RealField>(
+pub fn subdivide<F: RealField + Copy>(
     event_queue: &mut SimpleHeap<Rc<SweepEvent<F>>>,
     sbbox: &Rectangle<F>,
     cbbox: &Rectangle<F>,

@@ -3,7 +3,7 @@ use pi_heap::simple_heap::SimpleHeap;
 use nalgebra::{Point2, RealField, Scalar};
 use std::rc::Rc;
 
-pub fn divide_segment<F: Scalar + RealField>(
+pub fn divide_segment<F: Scalar + RealField + Copy>(
     se: &Rc<SweepEvent<F>>,
     inter: Point2<F>,
     queue: &mut SimpleHeap<Rc<SweepEvent<F>>>,
