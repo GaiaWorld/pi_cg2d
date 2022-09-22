@@ -1,6 +1,6 @@
 [package]
 name = "pi_cg2d"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["yineng <dev@dev.com>"]
 edition = "2021"
 description = "cg2d"
@@ -13,9 +13,9 @@ pi_slab = "0.1"
 pi_heap = "0.1"
 pi_hash = "0.1"
 pi_triangulation = "0.1"
-ncollide2d = "0.27.0"
-num-traits = "0.2.14"
-nalgebra = "0.24.0"
+ncollide2d = "0.33"
+num-traits = "0.2"
+nalgebra = "0.30"
 log = "0.4"
 
 [dev-dependencies]
