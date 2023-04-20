@@ -1,9 +1,7 @@
-use nalgebra::{Point2, RealField, Scalar};
+use parry2d::math::{Point, Real};
 
 #[inline]
-pub fn signed_area<F>(p0: Point2<F>, p1: Point2<F>, p2: Point2<F>) -> F
-where
-    F: Scalar + RealField + Copy,
+pub fn signed_area(p0: Point<Real>, p1: Point<Real>, p2: Point<Real>) -> Real
 {
     (p0.x - p2.x) * (p1.y - p2.y) - (p1.x - p2.x) * (p0.y - p2.y)
 }

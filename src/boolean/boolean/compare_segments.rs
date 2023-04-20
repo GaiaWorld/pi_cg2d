@@ -1,21 +1,18 @@
 use super::helper::less_if;
 use super::signed_area::signed_area;
 use super::sweep_event::SweepEvent;
-use nalgebra::{RealField, Scalar};
 use std::cmp::Ordering;
 use std::rc::Rc;
 
-pub fn compare_segments<F>(le1: &Rc<SweepEvent<F>>, le2: &Rc<SweepEvent<F>>) -> Ordering
-where
-    F: Scalar + RealField + Copy,
+pub fn compare_segments(le1: &Rc<SweepEvent>, le2: &Rc<SweepEvent>) -> Ordering
 {
     if Rc::ptr_eq(&le1, &le2) {
         return Ordering::Equal;
     }
 
     if let (Some(other1), Some(other2)) = (le1.get_other_event(), le2.get_other_event()) {
-        if signed_area(le1.point, other1.point, le2.point) != F::zero()
-            || signed_area(le1.point, other1.point, other2.point) != F::zero()
+        if signed_area(le1.point, other1.point, le2.point) != 0.0
+            || signed_area(le1.point, other1.point, other2.point) != 0.0
         {
             if le1.point == le2.point {
                 return less_if(le1.is_below(other2.point));
@@ -52,21 +49,21 @@ where
 mod test {
     use super::super::sweep_event::SweepEvent;
     use super::compare_segments;
-    use nalgebra::Point2;
+    use parry2d::math::{Point, Real};
     use std::cmp::Ordering;
     use std::rc::{Rc, Weak};
 
     fn make_simple(
         contour_id: u32,
-        x: f64,
-        y: f64,
-        other_x: f64,
-        other_y: f64,
+        x: Real,
+        y: Real,
+        other_x: Real,
+        other_y: Real,
         is_subject: bool,
-    ) -> (Rc<SweepEvent<f64>>, Rc<SweepEvent<f64>>) {
+    ) -> (Rc<SweepEvent>, Rc<SweepEvent>) {
         let other = SweepEvent::new_rc(
             contour_id,
-            Point2::new(other_x, other_y),
+            Point::new(other_x, other_y),
             false,
             Weak::new(),
             is_subject,
@@ -74,7 +71,7 @@ mod test {
         );
         let event = SweepEvent::new_rc(
             contour_id,
-            Point2::new(x, y),
+            Point::new(x, y),
             true,
             Rc::downgrade(&other),
             is_subject,

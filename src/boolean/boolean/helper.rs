@@ -11,9 +11,13 @@ pub fn less_if(condition: bool) -> Ordering {
 
 #[cfg(test)]
 pub mod test {
-    use nalgebra::Point2;
+    use parry2d::math::{Point, Real};
 
-    pub fn xy<X: Into<f64>, Y: Into<f64>>(x: X, y: Y) -> Point2<f64> {
-        Point2::new(x.into(), y.into())
+    pub fn xy(x: i32, y: i32) -> Point<Real> {
+        Point::new(x as Real, y as Real)
+    }
+
+	pub fn xyf32(x: f32, y: f32) -> Point<Real> {
+        Point::new(x as Real, y as Real)
     }
 }

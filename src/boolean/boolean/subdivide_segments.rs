@@ -6,18 +6,17 @@ use super::Operation;
 use crate::boolean::splay::SplaySet;
 use crate::geo2d::Rectangle;
 use pi_heap::simple_heap::SimpleHeap;
-use nalgebra::RealField;
 use std::rc::Rc;
 
-pub fn subdivide<F: RealField + Copy>(
-    event_queue: &mut SimpleHeap<Rc<SweepEvent<F>>>,
-    sbbox: &Rectangle<F>,
-    cbbox: &Rectangle<F>,
+pub fn subdivide(
+    event_queue: &mut SimpleHeap<Rc<SweepEvent>>,
+    sbbox: &Rectangle,
+    cbbox: &Rectangle,
     operation: Operation,
-) -> Vec<Rc<SweepEvent<F>>>
+) -> Vec<Rc<SweepEvent>>
 {
-    let mut sweep_line = SplaySet::<Rc<SweepEvent<F>>, _>::new(compare_segments);
-    let mut sorted_events: Vec<Rc<SweepEvent<F>>> = Vec::new();
+    let mut sweep_line = SplaySet::<Rc<SweepEvent>, _>::new(compare_segments);
+    let mut sorted_events: Vec<Rc<SweepEvent>> = Vec::new();
     let rightbound = sbbox.maxs.x.min(cbbox.maxs.x);
 
     while let Some(event) = event_queue.pop() {

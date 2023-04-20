@@ -1,6 +1,6 @@
 use crate::geo2d::{Polygon, Rectangle};
-use nalgebra::{Point2, RealField, Scalar};
 use num_traits::Float;
+use parry2d::math::{Real, Point};
 pub mod compare_segments;
 pub mod compute_fields;
 mod connect_edges;
@@ -25,76 +25,61 @@ pub enum Operation {
     Xor,
 }
 
-pub trait BooleanOp<F, Rhs = Self>
-where
-    F: Float + Scalar + RealField,
-{
-    fn boolean(&self, rhs: &Rhs, operation: Operation) -> Vec<Polygon<F>>;
+pub trait BooleanOp<Rhs = Self>{
+    fn boolean(&self, rhs: &Rhs, operation: Operation) -> Vec<Polygon>;
 
-    fn intersection(&self, rhs: &Rhs) -> Vec<Polygon<F>> {
+    fn intersection(&self, rhs: &Rhs) -> Vec<Polygon> {
         self.boolean(rhs, Operation::Intersection)
     }
 
-    fn difference(&self, rhs: &Rhs) -> Vec<Polygon<F>> {
+    fn difference(&self, rhs: &Rhs) -> Vec<Polygon> {
         self.boolean(rhs, Operation::Difference)
     }
 
-    fn union(&self, rhs: &Rhs) -> Vec<Polygon<F>> {
+    fn union(&self, rhs: &Rhs) -> Vec<Polygon> {
         self.boolean(rhs, Operation::Union)
     }
 
-    fn xor(&self, rhs: &Rhs) -> Vec<Polygon<F>> {
+    fn xor(&self, rhs: &Rhs) -> Vec<Polygon> {
         self.boolean(rhs, Operation::Xor)
     }
 }
 
-impl<F> BooleanOp<F> for Polygon<F>
-where
-    F: Float + Scalar + RealField,
-{
-    fn boolean(&self, rhs: &Polygon<F>, operation: Operation) -> Vec<Polygon<F>> {
+impl BooleanOp for Polygon{
+    fn boolean(&self, rhs: &Polygon, operation: Operation) -> Vec<Polygon> {
         boolean_operation(&[self.clone()], &[rhs.clone()], operation)
     }
 }
 
-impl<F> BooleanOp<F, Vec<Polygon<F>>> for Polygon<F>
-where
-    F: Float + Scalar + RealField,
-{
-    fn boolean(&self, rhs: &Vec<Polygon<F>>, operation: Operation) -> Vec<Polygon<F>> {
+impl BooleanOp<Vec<Polygon>> for Polygon {
+    fn boolean(&self, rhs: &Vec<Polygon>, operation: Operation) -> Vec<Polygon> {
         boolean_operation(&[self.clone()], rhs.as_slice(), operation)
     }
 }
 
-impl<F> BooleanOp<F> for Vec<Polygon<F>>
-where
-    F: Float + Scalar + RealField,
+impl BooleanOp for Vec<Polygon>
 {
-    fn boolean(&self, rhs: &Vec<Polygon<F>>, operation: Operation) -> Vec<Polygon<F>> {
+    fn boolean(&self, rhs: &Vec<Polygon>, operation: Operation) -> Vec<Polygon> {
         boolean_operation(self.as_slice(), rhs.as_slice(), operation)
     }
 }
 
-impl<F> BooleanOp<F, Polygon<F>> for Vec<Polygon<F>>
-where
-    F: Float + Scalar + RealField,
+impl BooleanOp<Polygon> for Vec<Polygon>
 {
-    fn boolean(&self, rhs: &Polygon<F>, operation: Operation) -> Vec<Polygon<F>> {
+    fn boolean(&self, rhs: &Polygon, operation: Operation) -> Vec<Polygon> {
         boolean_operation(self.as_slice(), &[rhs.clone()], operation)
     }
 }
 
-fn boolean_operation<F>(
-    subject: &[Polygon<F>],
-    clipping: &[Polygon<F>],
+fn boolean_operation(
+    subject: &[Polygon],
+    clipping: &[Polygon],
     operation: Operation,
-) -> Vec<Polygon<F>>
-where
-    F: Float + Scalar + RealField,
+) -> Vec<Polygon>
 {
     let mut sbbox = Rectangle {
-        mins: Point2::new(F::infinity(), F::infinity()),
-        maxs: Point2::new(F::neg_infinity(), F::neg_infinity()),
+        mins: Point::new(Real::infinity(), Real::infinity()),
+        maxs: Point::new(Real::neg_infinity(), Real::neg_infinity()),
     };
     let mut cbbox = sbbox;
 
@@ -113,13 +98,11 @@ where
     connect_edges(&sorted_events, operation)
 }
 
-fn trivial_result<F>(
-    subject: &[Polygon<F>],
-    clipping: &[Polygon<F>],
+fn trivial_result(
+    subject: &[Polygon],
+    clipping: &[Polygon],
     operation: Operation,
-) -> Vec<Polygon<F>>
-where
-    F: Float + Scalar + RealField,
+) -> Vec<Polygon>
 {
     match operation {
         Operation::Intersection => vec![],

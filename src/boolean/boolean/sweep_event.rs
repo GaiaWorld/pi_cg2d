@@ -1,4 +1,4 @@
-use nalgebra::{Point2, RealField, Scalar};
+use parry2d::math::{Point, Real};
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::rc::{Rc, Weak};
@@ -15,12 +15,10 @@ pub enum EdgeType {
 }
 
 #[derive(Clone)]
-struct MutablePart<F>
-where
-    F: Scalar + RealField + Copy,
+struct MutablePart
 {
     left: bool,
-    other_event: Weak<SweepEvent<F>>,
+    other_event: Weak<SweepEvent>,
     edge_type: EdgeType,
     in_out: bool,
     other_in_out: bool,
@@ -29,29 +27,25 @@ where
 }
 
 #[derive(Clone)]
-pub struct SweepEvent<F>
-where
-    F: Scalar + RealField + Copy,
+pub struct SweepEvent
 {
-    mutable: RefCell<MutablePart<F>>,
+    mutable: RefCell<MutablePart>,
     pub contour_id: u32,
-    pub point: Point2<F>,
+    pub point: Point<Real>,
     pub is_subject: bool,
     pub is_exterior_ring: bool,
 }
 
-impl<F> SweepEvent<F>
-where
-    F: Scalar + RealField + Copy,
+impl SweepEvent
 {
     pub fn new_rc(
         contour_id: u32,
-        point: Point2<F>,
+        point: Point<Real>,
         left: bool,
-        other_event: Weak<SweepEvent<F>>,
+        other_event: Weak<SweepEvent>,
         is_subject: bool,
         is_exterior_ring: bool,
-    ) -> Rc<SweepEvent<F>> {
+    ) -> Rc<SweepEvent> {
         Rc::new(SweepEvent {
             mutable: RefCell::new(MutablePart {
                 left,
@@ -77,11 +71,11 @@ where
         self.mutable.borrow_mut().left = left
     }
 
-    pub fn get_other_event(&self) -> Option<Rc<SweepEvent<F>>> {
+    pub fn get_other_event(&self) -> Option<Rc<SweepEvent>> {
         self.mutable.borrow().other_event.upgrade()
     }
 
-    pub fn set_other_event(&self, other_event: &Rc<SweepEvent<F>>) {
+    pub fn set_other_event(&self, other_event: &Rc<SweepEvent>) {
         self.mutable.borrow_mut().other_event = Rc::downgrade(other_event);
     }
 
@@ -124,19 +118,19 @@ where
         self.mutable.borrow_mut().pos = pos
     }
 
-    pub fn is_below(&self, p: Point2<F>) -> bool {
+    pub fn is_below(&self, p: Point<Real>) -> bool {
         if let Some(ref other_event) = self.get_other_event() {
             if self.is_left() {
-                signed_area(self.point, other_event.point, p) > F::zero()
+                signed_area(self.point, other_event.point, p) > 0.0
             } else {
-                signed_area(other_event.point, self.point, p) > F::zero()
+                signed_area(other_event.point, self.point, p) > 0.0
             }
         } else {
             false
         }
     }
 
-    pub fn is_above(&self, p: Point2<F>) -> bool {
+    pub fn is_above(&self, p: Point<Real>) -> bool {
         !self.is_below(p)
     }
 
@@ -148,9 +142,7 @@ where
     }
 }
 
-impl<F> PartialEq for SweepEvent<F>
-where
-    F: Scalar + RealField + Copy,
+impl PartialEq for SweepEvent
 {
     fn eq(&self, other: &Self) -> bool {
         self.contour_id == other.contour_id
@@ -160,20 +152,16 @@ where
     }
 }
 
-impl<F> Eq for SweepEvent<F> where F: Scalar + RealField + Copy {}
+impl Eq for SweepEvent {}
 
-impl<F> PartialOrd for SweepEvent<F>
-where
-    F: Scalar + RealField + Copy,
+impl PartialOrd for SweepEvent
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<F> Ord for SweepEvent<F>
-where
-    F: Scalar + RealField + Copy,
+impl Ord for SweepEvent
 {
     fn cmp(&self, other: &Self) -> Ordering {
         // Ord is exactly the other way round as in the js implementation as BinaryHeap sorts decending
@@ -198,7 +186,7 @@ where
         }
 
         if let (Some(other1), Some(other2)) = (self.get_other_event(), other.get_other_event()) {
-            if signed_area(p1, other1.point, other2.point) != F::zero() {
+            if signed_area(p1, other1.point, other2.point) != 0.0 {
                 return less_if(!self.is_below(other2.point));
             }
         }
@@ -209,6 +197,8 @@ where
 
 #[cfg(test)]
 mod test {
+    use crate::boolean::boolean::helper::test::xyf32;
+
     use super::super::helper::test::xy;
     use super::*;
 
@@ -250,7 +240,7 @@ mod test {
     pub fn test_is_vertical() {
         let other_s1 = SweepEvent::new_rc(0, xy(0, 1), false, Weak::new(), false, true);
         let s1 = SweepEvent::new_rc(0, xy(0, 0), true, Rc::downgrade(&other_s1), false, true);
-        let other_s2 = SweepEvent::new_rc(0, xy(0.0001, 1), false, Weak::new(), false, true);
+        let other_s2 = SweepEvent::new_rc(0, xyf32(0.0001, 1.0), false, Weak::new(), false, true);
         let s2 = SweepEvent::new_rc(0, xy(0, 0), true, Rc::downgrade(&other_s2), false, true);
 
         assert!(s1.is_vertical());

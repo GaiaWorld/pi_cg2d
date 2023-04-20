@@ -2,13 +2,12 @@ use super::divide_segment::divide_segment;
 use super::segment_intersection::{intersection, LineIntersection};
 use super::sweep_event::{EdgeType, SweepEvent};
 use pi_heap::simple_heap::SimpleHeap;
-use nalgebra::{RealField, Scalar};
 use std::rc::Rc;
 
-pub fn possible_intersection<F: Scalar + RealField + Copy>(
-    se1: &Rc<SweepEvent<F>>,
-    se2: &Rc<SweepEvent<F>>,
-    queue: &mut SimpleHeap<Rc<SweepEvent<F>>>,
+pub fn possible_intersection(
+    se1: &Rc<SweepEvent>,
+    se2: &Rc<SweepEvent>,
+    queue: &mut SimpleHeap<Rc<SweepEvent>>,
 ) -> u8 {
     let (other1, other2) = match (se1.get_other_event(), se2.get_other_event()) {
         (Some(other1), Some(other2)) => (other1, other2),

@@ -1,45 +1,43 @@
-use nalgebra::{Point2, RealField, Scalar};
+use parry2d::math::{Point, Real};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum LineIntersection<F>
-where
-    F: Scalar + RealField + Copy,
+pub enum LineIntersection
+
 {
     None,
-    Point(Point2<F>),
-    Overlap(Point2<F>, Point2<F>),
+    Point(Point<Real>),
+    Overlap(Point<Real>, Point<Real>),
 }
 
-pub fn intersection<F>(
-    a1: Point2<F>,
-    a2: Point2<F>,
-    b1: Point2<F>,
-    b2: Point2<F>,
-) -> LineIntersection<F>
-where
-    F: Scalar + RealField + Copy,
+pub fn intersection(
+    a1: Point<Real>,
+    a2: Point<Real>,
+    b1: Point<Real>,
+    b2: Point<Real>,
+) -> LineIntersection
+
 {
-    let va = Point2::new(a2.x - a1.x, a2.y - a1.y);
-    let vb = Point2::new(b2.x - b1.x, b2.y - b1.y);
-    let e = Point2::new(b1.x - a1.x, b1.y - a1.y);
+    let va = Point::new(a2.x - a1.x, a2.y - a1.y);
+    let vb = Point::new(b2.x - b1.x, b2.y - b1.y);
+    let e = Point::new(b1.x - a1.x, b1.y - a1.y);
     let mut kross = cross_product(va, vb);
     let mut sqr_kross = kross * kross;
     let sqr_len_a = dot_product(va, va);
 
-    if sqr_kross > F::zero() {
+    if sqr_kross > 0.0 {
         let s = cross_product(e, vb) / kross;
-        if s < F::zero() || s > F::one() {
+        if s < 0.0 || s > 1.0 {
             return LineIntersection::None;
         }
         let t = cross_product(e, va) / kross;
-        if t < F::zero() || t > F::one() {
+        if t < 0.0 || t > 1.0 {
             return LineIntersection::None;
         }
 
-        if s == F::zero() || s == F::one() {
+        if s == 0.0 || s == 1.0 {
             return LineIntersection::Point(mid_point(a1, s, va));
         }
-        if t == F::zero() || t == F::one() {
+        if t == 0.0 || t == 1.0 {
             return LineIntersection::Point(mid_point(b1, t, vb));
         }
 
@@ -49,7 +47,7 @@ where
     kross = cross_product(e, va);
     sqr_kross = kross * kross;
 
-    if sqr_kross > F::zero() {
+    if sqr_kross > 0.0 {
         return LineIntersection::None;
     }
 
@@ -58,48 +56,47 @@ where
     let smin = sa.min(sb);
     let smax = sa.max(sb);
 
-    if smin <= F::one() && smax >= F::zero() {
-        if smin == F::one() {
+    if smin <= 1.0 && smax >= 0.0 {
+        if smin == 1.0 {
             return LineIntersection::Point(mid_point(a1, smin, va));
         }
-        if smax == F::zero() {
+        if smax == 0.0 {
             return LineIntersection::Point(mid_point(a1, smax, va));
         }
 
         return LineIntersection::Overlap(
-            mid_point(a1, smin.max(F::zero()), va),
-            mid_point(a1, smax.min(F::one()), va),
+            mid_point(a1, smin.max(0.0), va),
+            mid_point(a1, smax.min(1.0), va),
         );
     }
 
     LineIntersection::None
 }
 
-fn mid_point<F>(p: Point2<F>, s: F, d: Point2<F>) -> Point2<F>
-where
-    F: Scalar + RealField + Copy,
+fn mid_point(p: Point<Real>, s: Real, d: Point<Real>) -> Point<Real>
+
 {
-    Point2::new(p.x + s * d.x, p.y + s * d.y)
+    Point::new(p.x + s * d.x, p.y + s * d.y)
 }
 
 #[inline]
-fn cross_product<F>(a: Point2<F>, b: Point2<F>) -> F
-where
-    F: Scalar + RealField + Copy,
+fn cross_product(a: Point<Real>, b: Point<Real>) -> Real
+
 {
     a.x * b.y - a.y * b.x
 }
 
 #[inline]
-fn dot_product<F>(a: Point2<F>, b: Point2<F>) -> F
-where
-    F: Scalar + RealField + Copy,
+fn dot_product(a: Point<Real>, b: Point<Real>) -> Real
+
 {
     a.x * b.x + a.y * b.y
 }
 
 #[cfg(test)]
 mod test {
+    use crate::boolean::boolean::helper::test::xyf32;
+
     use super::super::helper::test::xy;
     use super::*;
 
@@ -120,7 +117,7 @@ mod test {
 
         assert_eq!(
             intersection(xy(0, 0), xy(1, 1), xy(1, 0), xy(0, 1)),
-            LineIntersection::Point(xy(0.5, 0.5))
+            LineIntersection::Point(xyf32(0.5, 0.5))
         );
 
         assert_eq!(
@@ -133,8 +130,8 @@ mod test {
         );
 
         assert_eq!(
-            intersection(xy(0, 0), xy(1, 1), xy(0.5, 0.5), xy(1, 0)),
-            LineIntersection::Point(xy(0.5, 0.5))
+            intersection(xy(0, 0), xy(1, 1), xyf32(0.5, 0.5), xy(1, 0)),
+            LineIntersection::Point(xyf32(0.5, 0.5))
         );
 
         assert_eq!(
@@ -184,8 +181,8 @@ mod test {
         );
 
         assert_eq!(
-            intersection(xy(0, 0.5), xy(1, 1.5), xy(0, 1), xy(1, 0)),
-            LineIntersection::Point(xy(0.25, 0.75))
+            intersection(xyf32(0.0, 0.5), xyf32(1.0, 1.5), xy(0, 1), xy(1, 0)),
+            LineIntersection::Point(xyf32(0.25, 0.75))
         );
     }
 }

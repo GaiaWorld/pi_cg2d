@@ -1,6 +1,5 @@
 use crate::geo2d::{Polygon, PolygonIter, Rectangle};
 use pi_heap::simple_heap::SimpleHeap;
-use nalgebra::{RealField, Scalar};
 use num_traits::Float;
 use std::cmp::Ordering;
 use std::rc::{Rc, Weak};
@@ -8,14 +7,14 @@ use std::rc::{Rc, Weak};
 use super::sweep_event::SweepEvent;
 use super::Operation;
 
-pub fn fill_queue<F: Scalar + RealField + Float>(
-    subject: &[Polygon<F>],
-    clipping: &[Polygon<F>],
-    sbbox: &mut Rectangle<F>,
-    cbbox: &mut Rectangle<F>,
+pub fn fill_queue(
+    subject: &[Polygon],
+    clipping: &[Polygon],
+    sbbox: &mut Rectangle,
+    cbbox: &mut Rectangle,
     operation: Operation,
-) -> SimpleHeap<Rc<SweepEvent<F>>> {
-    let mut event_queue: SimpleHeap<Rc<SweepEvent<F>>> = SimpleHeap::new(Ordering::Greater);
+) -> SimpleHeap<Rc<SweepEvent>> {
+    let mut event_queue: SimpleHeap<Rc<SweepEvent>> = SimpleHeap::new(Ordering::Greater);
     let mut contour_id = 0u32;
 
     for polygon in subject {
@@ -68,12 +67,12 @@ pub fn fill_queue<F: Scalar + RealField + Float>(
     event_queue
 }
 
-fn process_polygon<F: Scalar + RealField + Float>(
-    contour_or_hole: PolygonIter<F>,
+fn process_polygon<>(
+    contour_or_hole: PolygonIter,
     is_subject: bool,
     contour_id: u32,
-    event_queue: &mut SimpleHeap<Rc<SweepEvent<F>>>,
-    bbox: &mut Rectangle<F>,
+    event_queue: &mut SimpleHeap<Rc<SweepEvent>>,
+    bbox: &mut Rectangle,
     is_exterior_ring: bool,
 ) {
     for (start, end) in contour_or_hole.lines() {
@@ -119,16 +118,16 @@ fn process_polygon<F: Scalar + RealField + Float>(
 mod test {
     use super::*;
     use pi_heap::simple_heap::SimpleHeap;
-    use nalgebra::Point2;
+    use parry2d::math::{Point, Real};
     use std::cmp::Ordering;
     use std::rc::{Rc, Weak};
 
-    fn make_simple(x: f64, y: f64, is_subject: bool) -> Rc<SweepEvent<f64>> {
-        SweepEvent::new_rc(0, Point2::new(x, y), false, Weak::new(), is_subject, true)
+    fn make_simple(x: Real, y: Real, is_subject: bool) -> Rc<SweepEvent> {
+        SweepEvent::new_rc(0, Point::new(x, y), false, Weak::new(), is_subject, true)
     }
 
-    fn check_order_in_queue(first: Rc<SweepEvent<f64>>, second: Rc<SweepEvent<f64>>) {
-        let mut queue: SimpleHeap<Rc<SweepEvent<f64>>> = SimpleHeap::new(Ordering::Greater);
+    fn check_order_in_queue(first: Rc<SweepEvent>, second: Rc<SweepEvent>) {
+        let mut queue: SimpleHeap<Rc<SweepEvent>> = SimpleHeap::new(Ordering::Greater);
 
         assert_eq!(first.cmp(&second), Ordering::Greater);
         assert_eq!(second.cmp(&first), Ordering::Less);

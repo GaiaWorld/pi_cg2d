@@ -1,10 +1,10 @@
-pub use ncollide2d::bounding_volume::AABB as Rectangle;
+pub use parry2d::bounding_volume::Aabb as Rectangle;
+use parry2d::math::Real;
 
 pub use crate::boolean::boolean::Operation as BooleanOperation;
 
 use crate::boolean::boolean::BooleanOp;
-use nalgebra::{Point2, RealField, Scalar};
-use num_traits::Float;
+use parry2d::math::Point;
 use std::slice;
 use pi_triangulation::earcut;
 
@@ -28,11 +28,8 @@ use pi_triangulation::earcut;
  *    + for (pt1, pt2, pt3) = string.triangles(), 可以依次遍历所有的前后缀点，分别是：(p1,p2,p3), (p2,p3,p4), ... (pn, p1,p2)
  */
 #[derive(Clone)]
-pub struct Polygon<F>
-where
-    F: Scalar + RealField + Float,
-{
-    pub vertices: Vec<Point2<F>>,
+pub struct Polygon {
+    pub vertices: Vec<Point<Real>>,
     pub hole_indices: Vec<usize>, // 每个洞的起点在vertices数组的索引
 }
 
@@ -43,18 +40,13 @@ where
  *    + for (pt1, pt2) = string.lines(), 可以依次遍历所有的边，分别是：(p1,p2), (p2,p3), ... (p(n-1),pn), (pn,p1)
  *    + for (pt1, pt2, pt3) = string.triangles(), 可以依次遍历所有的前后缀点，分别是：(p1,p2,p3), (p2,p3,p4), ... (pn, p1,p2)
  */
-pub struct LineString<F>
-where
-    F: Scalar + RealField + Float,
-{
-    pub vertices: Vec<Point2<F>>, // 点集
+pub struct LineString{
+    pub vertices: Vec<Point<Real>>, // 点集
 }
 
-impl<F> Polygon<F>
-where
-    F: Scalar + RealField + Float,
+impl Polygon
 {
-    pub fn new(pts: &[Point2<F>]) -> Self {
+    pub fn new(pts: &[Point<Real>]) -> Self {
         let mut polygon = Self {
             vertices: vec![],
             hole_indices: vec![],
@@ -64,7 +56,7 @@ where
         polygon
     }
 
-    pub fn new_from_linestring(exterior: &LineString<F>) -> Self {
+    pub fn new_from_linestring(exterior: &LineString) -> Self {
         let mut polygon = Self {
             vertices: vec![],
             hole_indices: vec![],
@@ -80,10 +72,10 @@ where
      * 两个多边形的布尔运算：并，交，差，异或
      */
     pub fn boolean(
-        p1: &Polygon<F>,
-        p2: &Polygon<F>,
+        p1: &Polygon,
+        p2: &Polygon,
         operation: BooleanOperation,
-    ) -> Vec<Polygon<F>> {
+    ) -> Vec<Polygon> {
         p1.boolean(p2, operation)
     }
 
@@ -93,30 +85,30 @@ where
      */
     pub fn triangulation(&self) -> Vec<usize> {
         let ptr = self.vertices.as_ptr();
-        let ptr = ptr as *const F;
-        let pts: &[F] = unsafe { slice::from_raw_parts(ptr, 2 * self.vertices.len()) };
+        let ptr = ptr as *const Real;
+        let pts: &[Real] = unsafe { slice::from_raw_parts(ptr, 2 * self.vertices.len()) };
         earcut(pts, &self.hole_indices, 2)
     }
 
     // 设置外围多边形
-    pub fn set_exterior(&mut self, string: &LineString<F>) {
+    pub fn set_exterior(&mut self, string: &LineString) {
         debug_assert!(self.vertices.len() == 0, "invalid time to set");
         self.vertices.extend_from_slice(string.vertices.as_slice());
     }
 
     // 插入一个孔
-    pub fn push_hole(&mut self, string: &LineString<F>) {
+    pub fn push_hole(&mut self, string: &LineString) {
         self.hole_indices.push(self.vertices.len());
         self.vertices.extend_from_slice(string.vertices.as_slice());
     }
 
     // 外围多边形：得到一个多边形迭代器
-    pub fn exterior(&self) -> PolygonIter<F> {
+    pub fn exterior(&self) -> PolygonIter {
         let hole_num = self.hole_indices.len();
         if hole_num > 0 {
-            PolygonIter::<F>::new(&self.vertices[0..self.hole_indices[0]])
+            PolygonIter::new(&self.vertices[0..self.hole_indices[0]])
         } else {
-            PolygonIter::<F>::new(&self.vertices[..])
+            PolygonIter::new(&self.vertices[..])
         }
     }
 
@@ -126,10 +118,10 @@ where
     }
 
     // 第i个孔多边形的迭代器
-    pub fn hole(&self, i: usize) -> PolygonIter<F> {
+    pub fn hole(&self, i: usize) -> PolygonIter {
         let len = self.hole_indices.len();
         if i >= len {
-            PolygonIter::<F>::new(&self.vertices[0..0])
+            PolygonIter::new(&self.vertices[0..0])
         } else {
             let start = self.hole_indices[i];
             let end = if i + 1 == len {
@@ -138,14 +130,12 @@ where
                 self.hole_indices[i + 1]
             };
 
-            PolygonIter::<F>::new(&self.vertices[start..end])
+            PolygonIter::new(&self.vertices[start..end])
         }
     }
 }
 
-impl<F> Default for Polygon<F>
-where
-    F: Scalar + RealField + Float,
+impl Default for Polygon
 {
     fn default() -> Self {
         Self {
@@ -155,97 +145,93 @@ where
     }
 }
 
-impl<F> Default for LineString<F>
-where
-    F: Scalar + RealField + Float,
+impl Default for LineString
 {
     fn default() -> Self {
         Self { vertices: vec![] }
     }
 }
 
-impl<F> LineString<F>
-where
-    F: Scalar + RealField + Float,
+impl LineString
 {
-    pub fn new(vertices: Vec<Point2<F>>) -> Self {
+    pub fn new(vertices: Vec<Point<Real>>) -> Self {
         Self { vertices }
     }
 
-    pub fn push_point(&mut self, vertex: Point2<F>) {
+    pub fn push_point(&mut self, vertex: Point<Real>) {
         self.vertices.push(vertex)
     }
 
-    pub fn points(&self) -> PointIterator<F> {
-        PointIterator::<F> {
+    pub fn points(&self) -> PointIterator {
+        PointIterator {
             cursor: 0,
             vertices: &self.vertices,
         }
     }
 
-    pub fn lines(&self) -> LineIterator<F> {
-        LineIterator::<F> {
+    pub fn lines(&self) -> LineIterator {
+        LineIterator {
             cursor: 0,
             vertices: &self.vertices,
         }
     }
 
-    pub fn triangles(&self) -> TriIterator<F> {
-        TriIterator::<F> {
+    pub fn triangles(&self) -> TriIterator {
+        TriIterator {
             cursor: 0,
             vertices: &self.vertices,
         }
     }
 }
 
-pub struct PolygonIter<'a, F: Scalar + RealField + Float> {
-    vertices: &'a [Point2<F>],
+pub struct PolygonIter<'a> {
+    vertices: &'a [Point<Real>],
 }
 
-pub struct PointIterator<'a, F: Scalar + RealField + Float> {
+pub struct PointIterator<'a> {
     cursor: usize,
-    vertices: &'a [Point2<F>],
+    vertices: &'a [Point<Real>],
 }
 
-pub struct LineIterator<'a, F: Scalar + RealField + Float> {
+pub struct LineIterator<'a> {
     cursor: usize,
-    vertices: &'a [Point2<F>],
+    vertices: &'a [Point<Real>],
 }
 
-pub struct TriIterator<'a, F: Scalar + RealField + Float> {
+pub struct TriIterator<'a> {
     cursor: usize,
-    vertices: &'a [Point2<F>],
+    vertices: &'a [Point<Real>],
 }
 
-impl<'a, F: Scalar + RealField + Float> PolygonIter<'a, F> {
-    pub fn new(vertices: &'a [Point2<F>]) -> Self {
+impl<'a> PolygonIter<'a> {
+    pub fn new(vertices: &'a [Point<Real>]) -> Self {
         Self { vertices }
     }
 
-    pub fn points(&self) -> PointIterator<F> {
-        PointIterator::<F> {
+    pub fn points(&self) -> PointIterator {
+        PointIterator {
             cursor: 0,
             vertices: &self.vertices,
         }
     }
 
-    pub fn lines(&self) -> LineIterator<F> {
-        LineIterator::<F> {
+    pub fn lines(&self) -> LineIterator {
+        LineIterator {
             cursor: 0,
             vertices: &self.vertices,
         }
     }
 
-    pub fn triangles(&self) -> TriIterator<F> {
-        TriIterator::<F> {
+    pub fn triangles(&self) -> TriIterator {
+        TriIterator {
             cursor: 0,
             vertices: &self.vertices,
         }
     }
 }
 
-impl<'a, F: Scalar + RealField + Float> Iterator for PointIterator<'a, F> {
-    type Item = &'a Point2<F>;
+impl<'a> Iterator for PointIterator<'a> {
+    type Item = &'a Point<Real>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.cursor < self.vertices.len() {
@@ -257,8 +243,8 @@ impl<'a, F: Scalar + RealField + Float> Iterator for PointIterator<'a, F> {
     }
 }
 
-impl<'a, F: Scalar + RealField + Float> Iterator for LineIterator<'a, F> {
-    type Item = (&'a Point2<F>, &'a Point2<F>);
+impl<'a> Iterator for LineIterator<'a> {
+    type Item = (&'a Point<Real>, &'a Point<Real>);
 
     fn next(&mut self) -> Option<Self::Item> {
         let cursor = self.cursor;
@@ -279,8 +265,8 @@ impl<'a, F: Scalar + RealField + Float> Iterator for LineIterator<'a, F> {
     }
 }
 
-impl<'a, F: Scalar + RealField + Float> Iterator for TriIterator<'a, F> {
-    type Item = (&'a Point2<F>, &'a Point2<F>, &'a Point2<F>);
+impl<'a> Iterator for TriIterator<'a> {
+    type Item = (&'a Point<Real>, &'a Point<Real>, &'a Point<Real>);
 
     fn next(&mut self) -> Option<Self::Item> {
         let cursor = self.cursor;
@@ -306,15 +292,15 @@ impl<'a, F: Scalar + RealField + Float> Iterator for TriIterator<'a, F> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use nalgebra::Point2;
+    use parry2d::math::Point;
 
     #[test]
     fn test_linestring_iter() {
         let pts = vec![
-            Point2::<f32>::new(-2.0, -2.0),
-            Point2::<f32>::new(2.0, -2.0),
-            Point2::<f32>::new(2.0, 2.0),
-            Point2::<f32>::new(-2.0, 2.0),
+            Point::<f32>::new(-2.0, -2.0),
+            Point::<f32>::new(2.0, -2.0),
+            Point::<f32>::new(2.0, 2.0),
+            Point::<f32>::new(-2.0, 2.0),
         ];
 
         let line_string = LineString::new(pts.clone());
@@ -343,7 +329,7 @@ mod test {
 
     #[test]
     fn test_linestring_1_pts_iter() {
-        let pts = vec![Point2::<f32>::new(-2.0, -2.0)];
+        let pts = vec![Point::<f32>::new(-2.0, -2.0)];
 
         let line_string = LineString::new(pts.clone());
 
@@ -361,8 +347,8 @@ mod test {
     #[test]
     fn test_linestring_2_pts_iter() {
         let pts = vec![
-            Point2::<f32>::new(-2.0, -2.0),
-            Point2::<f32>::new(2.0, -2.0),
+            Point::<f32>::new(-2.0, -2.0),
+            Point::<f32>::new(2.0, -2.0),
         ];
 
         let line_string = LineString::new(pts.clone());
@@ -383,9 +369,9 @@ mod test {
     #[test]
     fn test_linestring_3_pts_iter() {
         let pts = vec![
-            Point2::<f32>::new(-2.0, -2.0),
-            Point2::<f32>::new(2.0, -2.0),
-            Point2::<f32>::new(2.0, 2.0),
+            Point::<f32>::new(-2.0, -2.0),
+            Point::<f32>::new(2.0, -2.0),
+            Point::<f32>::new(2.0, 2.0),
         ];
 
         let line_string = LineString::new(pts.clone());
@@ -410,13 +396,13 @@ mod test {
     #[test]
     fn test_polygon_iter() {
         let pts = vec![
-            Point2::<f32>::new(-2.0, -2.0),
-            Point2::<f32>::new(2.0, -2.0),
-            Point2::<f32>::new(2.0, 2.0),
-            Point2::<f32>::new(-2.0, 2.0),
+            Point::<f32>::new(-2.0, -2.0),
+            Point::<f32>::new(2.0, -2.0),
+            Point::<f32>::new(2.0, 2.0),
+            Point::<f32>::new(-2.0, 2.0),
         ];
 
-        let polygon = Polygon::<f32>::new(&pts);
+        let polygon = Polygon::new(&pts);
         assert_eq!(polygon.hole_num(), 0);
 
         let piter = polygon.exterior();
@@ -445,28 +431,28 @@ mod test {
     #[test]
     fn test_polygon_hole_iter() {
         let pts = vec![
-            Point2::<f32>::new(-2.0, -2.0),
-            Point2::<f32>::new(2.0, -2.0),
-            Point2::<f32>::new(2.0, 2.0),
-            Point2::<f32>::new(-2.0, 2.0),
+            Point::<f32>::new(-2.0, -2.0),
+            Point::<f32>::new(2.0, -2.0),
+            Point::<f32>::new(2.0, 2.0),
+            Point::<f32>::new(-2.0, 2.0),
         ];
 
         let hole1 = vec![
-            Point2::<f32>::new(-1.0, -1.0),
-            Point2::<f32>::new(-1.0, 1.0),
-            Point2::<f32>::new(1.0, 1.0),
-            Point2::<f32>::new(1.0, -1.0),
+            Point::<f32>::new(-1.0, -1.0),
+            Point::<f32>::new(-1.0, 1.0),
+            Point::<f32>::new(1.0, 1.0),
+            Point::<f32>::new(1.0, -1.0),
         ];
 
         let hole2 = vec![
-            Point2::<f32>::new(1.7, 1.7),
-            Point2::<f32>::new(1.9, 1.2),
-            Point2::<f32>::new(1.7, 1.2),
+            Point::<f32>::new(1.7, 1.7),
+            Point::<f32>::new(1.9, 1.2),
+            Point::<f32>::new(1.7, 1.2),
         ];
 
-        let mut polygon = Polygon::<f32>::new(&pts);
-        polygon.push_hole(&LineString::<f32>::new(hole1.clone()));
-        polygon.push_hole(&LineString::<f32>::new(hole2.clone()));
+        let mut polygon = Polygon::new(&pts);
+        polygon.push_hole(&LineString::new(hole1.clone()));
+        polygon.push_hole(&LineString::new(hole2.clone()));
 
         let piter = polygon.exterior();
         let mut iter = piter.triangles();

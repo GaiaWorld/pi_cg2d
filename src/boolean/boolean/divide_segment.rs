@@ -1,12 +1,12 @@
 use super::sweep_event::SweepEvent;
+use parry2d::math::{Real, Point};
 use pi_heap::simple_heap::SimpleHeap;
-use nalgebra::{Point2, RealField, Scalar};
 use std::rc::Rc;
 
-pub fn divide_segment<F: Scalar + RealField + Copy>(
-    se: &Rc<SweepEvent<F>>,
-    inter: Point2<F>,
-    queue: &mut SimpleHeap<Rc<SweepEvent<F>>>,
+pub fn divide_segment(
+    se: &Rc<SweepEvent>,
+    inter: Point<Real>,
+    queue: &mut SimpleHeap<Rc<SweepEvent>>,
 ) {
     let other_event = match se.get_other_event() {
         Some(other_event) => other_event,
@@ -47,20 +47,20 @@ mod test {
     use super::super::segment_intersection::{intersection, LineIntersection};
     use super::super::sweep_event::SweepEvent;
     use super::*;
-    use nalgebra::Point2;
+    use parry2d::math::Point;
     use std::cmp::Ordering;
     use std::rc::{Rc, Weak};
 
     fn make_simple(
-        x: f64,
-        y: f64,
-        other_x: f64,
-        other_y: f64,
+        x: Real,
+        y: Real,
+        other_x: Real,
+        other_y: Real,
         is_subject: bool,
-    ) -> (Rc<SweepEvent<f64>>, Rc<SweepEvent<f64>>) {
+    ) -> (Rc<SweepEvent>, Rc<SweepEvent>) {
         let other = SweepEvent::new_rc(
             0,
-            Point2::new(other_x, other_y),
+            Point::new(other_x, other_y),
             false,
             Weak::new(),
             is_subject,
@@ -68,7 +68,7 @@ mod test {
         );
         let event = SweepEvent::new_rc(
             0,
-            Point2::new(x, y),
+            Point::new(x, y),
             true,
             Rc::downgrade(&other),
             is_subject,

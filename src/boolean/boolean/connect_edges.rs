@@ -1,16 +1,11 @@
 use super::sweep_event::SweepEvent;
 use super::Operation;
 use crate::geo2d::{Polygon, LineString};
-use nalgebra::RealField;
-use num_traits::Float;
 use pi_hash::XHashSet;
 use std::rc::Rc;
 
-fn order_events<F>(sorted_events: &[Rc<SweepEvent<F>>]) -> Vec<Rc<SweepEvent<F>>>
-where
-    F: Float + RealField,
-{
-    let mut result_events: Vec<Rc<SweepEvent<F>>> = Vec::new();
+fn order_events(sorted_events: &[Rc<SweepEvent>]) -> Vec<Rc<SweepEvent>> {
+    let mut result_events: Vec<Rc<SweepEvent>> = Vec::new();
 
     for event in sorted_events {
         if (event.is_left() && event.is_in_result())
@@ -48,10 +43,7 @@ where
     result_events
 }
 
-fn next_pos<F>(pos: i32, result_events: &[Rc<SweepEvent<F>>], processed: &mut XHashSet<i32>, orig_index: i32) -> i32
-where
-    F: Float + RealField,
-{
+fn next_pos(pos: i32, result_events: &[Rc<SweepEvent>], processed: &mut XHashSet<i32>, orig_index: i32) -> i32 {
     let p = result_events[pos as usize].point;
     let mut new_pos = pos + 1;
     let length = result_events.len() as i32;
@@ -80,13 +72,10 @@ where
     new_pos
 }
 
-pub fn connect_edges<F>(sorted_events: &[Rc<SweepEvent<F>>], operation: Operation) -> Vec<Polygon<F>>
-where
-    F: Float + RealField,
-{
+pub fn connect_edges(sorted_events: &[Rc<SweepEvent>], operation: Operation) -> Vec<Polygon> {
     let result_events = order_events(sorted_events);
 
-    let mut result: Vec<Polygon<F>> = Vec::new();
+    let mut result: Vec<Polygon> = Vec::new();
     let mut processed: XHashSet<i32> = XHashSet::default();
 
     for i in 0..(result_events.len() as i32) {
